@@ -3,7 +3,7 @@
 # GitHub API URL
 API_URL="https://api.github.com"
 
-# GitHub username and personal access token
+# GitHub username and personal access token (must be set as environment variables)
 USERNAME=$username
 TOKEN=$token
 
@@ -33,4 +33,22 @@ function list_users_with_read_access {
 
         # Display the list of collaborators with read access
         if [[ -z "$collaborators" ]]; then
-            echo "No use
+            echo "No users with read access found for ${REPO_OWNER}/${REPO_NAME}."
+        else
+            echo "Users with read access to ${REPO_OWNER}/${REPO_NAME}:"
+            echo "$collaborators"
+        fi
+    else
+        echo "❌ Unexpected response from GitHub API:"
+        echo "$response" | jq .
+        echo "⚠️  Possible causes:"
+        echo "   - Repository '${REPO_OWNER}/${REPO_NAME}' does not exist"
+        echo "   - Invalid GitHub token or insufficient permissions"
+        echo "   - API rate limit exceeded"
+        exit 1
+    fi
+}
+
+# Main script
+echo "Listing users with read access to ${REPO_OWNER}/${REPO_NAME}..."
+list_users_with_read_access
