@@ -3,7 +3,7 @@
 # GitHub API URL
 API_URL="https://api.github.com"
 
-# GitHub username and personal access token (must be set as environment variables)
+# GitHub username and personal access token
 USERNAME=$username
 TOKEN=$token
 
@@ -25,30 +25,18 @@ function list_users_with_read_access {
     local endpoint="repos/${REPO_OWNER}/${REPO_NAME}/collaborators"
 
     # Fetch the list of collaborators on the repository
-    response="$(github_api_get "$endpoint")"
+    collaborators="$(github_api_get "$endpoint" | jq -r '.[] | select(.permissions.pull == true) | .login')"
 
-    # Check if the response is a valid array (expected format)
-    if echo "$response" | jq -e 'type == "array"' > /dev/null; then
-        collaborators="$(echo "$response" | jq -r '.[] | select(.permissions.pull == true) | .login')"
-
-        # Display the list of collaborators with read access
-        if [[ -z "$collaborators" ]]; then
-            echo "No users with read access found for ${REPO_OWNER}/${REPO_NAME}."
-        else
-            echo "Users with read access to ${REPO_OWNER}/${REPO_NAME}:"
-            echo "$collaborators"
-        fi
+    # Display the list of collaborators with read access
+    if [[ -z "$collaborators" ]]; then
+        echo "No users with read access found for ${REPO_OWNER}/${REPO_NAME}."
     else
-        echo "❌ Unexpected response from GitHub API:"
-        echo "$response" | jq .
-        echo "⚠️  Possible causes:"
-        echo "   - Repository '${REPO_OWNER}/${REPO_NAME}' does not exist"
-        echo "   - Invalid GitHub token or insufficient permissions"
-        echo "   - API rate limit exceeded"
-        exit 1
+        echo "Users with read access to ${REPO_OWNER}/${REPO_NAME}:"
+        echo "$collaborators"
     fi
 }
 
 # Main script
+
 echo "Listing users with read access to ${REPO_OWNER}/${REPO_NAME}..."
 list_users_with_read_access
